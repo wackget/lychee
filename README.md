@@ -51,8 +51,16 @@ zypper in lychee
 
 ### macOS
 
+Via [Homebrew](https://brew.sh):
+
 ```sh
 brew install lychee
+```
+
+Via [MacPorts](https://www.macports.org):
+
+```sh
+sudo port install lychee
 ```
 
 ### Docker
@@ -97,6 +105,12 @@ pkg install lychee
 ```sh
  # available for Alpine Edge in testing repositories
 apk add lychee
+```
+
+### Chocolatey (Windows)
+
+```sh
+choco install lychee
 ```
 
 ### Pre-built binaries
@@ -301,7 +315,7 @@ Arguments:
 Options:
   -c, --config <CONFIG_FILE>
           Configuration file to use
-          
+
           [default: lychee.toml]
 
   -v, --verbose...
@@ -319,7 +333,7 @@ Options:
 
       --max-cache-age <MAX_CACHE_AGE>
           Discard all cached requests older than this duration
-          
+
           [default: 1d]
 
       --dump
@@ -330,7 +344,7 @@ Options:
 
       --archive <ARCHIVE>
           Specify the use of a specific web archive. Can be used in combination with `--suggest`
-          
+
           [possible values: wayback]
 
       --suggest
@@ -338,17 +352,17 @@ Options:
 
   -m, --max-redirects <MAX_REDIRECTS>
           Maximum number of allowed redirects
-          
+
           [default: 5]
 
       --max-retries <MAX_RETRIES>
           Maximum number of retries per request
-          
+
           [default: 3]
 
       --max-concurrency <MAX_CONCURRENCY>
           Maximum number of concurrent network requests
-          
+
           [default: 128]
 
   -T, --threads <THREADS>
@@ -356,7 +370,7 @@ Options:
 
   -u, --user-agent <USER_AGENT>
           User agent
-          
+
           [default: lychee/x.y.z]
 
   -i, --insecure
@@ -406,7 +420,7 @@ Options:
           Test the specified file extensions for URIs when checking files locally.
           Multiple extensions can be separated by commas. Extensions will be checked in
           order of appearance.
-          
+
           Example: --fallback-extensions html,htm,php,asp,aspx,jsp,cgi
 
       --header <HEADER>
@@ -414,20 +428,20 @@ Options:
 
   -a, --accept <ACCEPT>
           A List of accepted status codes for valid links
-          
+
           The following accept range syntax is supported: [start]..[=]end|code. Some valid
           examples are:
-          
+
           - 200..=204
           - 200..204
           - ..=204
           - ..204
           - 200
-          
+
           Use "lychee --accept '200..=204, 429, 500' <inputs>..." to provide a comma-
           separated list of accepted status codes. This example will accept 200, 201,
           202, 203, 204, 429, and 500 as valid status codes.
-          
+
           [default: 100..=103,200..=299]
 
       --include-fragments
@@ -435,17 +449,17 @@ Options:
 
   -t, --timeout <TIMEOUT>
           Website timeout in seconds from connect to response finished
-          
+
           [default: 20]
 
   -r, --retry-wait-time <RETRY_WAIT_TIME>
           Minimum wait time in seconds between retries of failed requests
-          
+
           [default: 1]
 
   -X, --method <METHOD>
           Request method
-          
+
           [default: get]
 
   -b, --base <BASE>
@@ -456,11 +470,17 @@ Options:
 
       --github-token <GITHUB_TOKEN>
           GitHub API token to use when checking github.com links, to avoid rate limiting
-          
+
           [env: GITHUB_TOKEN]
 
       --skip-missing
           Skip missing input files (default is to error if they don't exist)
+
+      --no-ignore
+          Do not skip files that would otherwise be ignored by '.gitignore', '.ignore', or the global ignore file
+
+      --hidden
+          Do not skip hidden directories and files
 
       --include-verbatim
           Find links in verbatim sections like `pre`- and `code` blocks
@@ -473,13 +493,13 @@ Options:
 
       --mode <MODE>
           Set the output display mode. Determines how results are presented in the terminal
-          
+
           [default: color]
           [possible values: plain, color, emoji]
 
   -f, --format <FORMAT>
           Output format of final status report
-          
+
           [default: compact]
           [possible values: compact, detailed, json, markdown, raw]
 
@@ -507,9 +527,28 @@ Options:
 
 You can exclude links from getting checked by specifying regex patterns
 with `--exclude` (e.g. `--exclude example\.(com|org)`).
-If a file named `.lycheeignore` exists in the current working directory, its
-contents are excluded as well. The file allows you to list multiple regular
-expressions for exclusion (one pattern per line).
+
+Here are some examples:
+
+```bash
+# Exclude LinkedIn URLs (note that we match on the full URL, including the schema to avoid false-positives)
+lychee --exclude '^https://www\.linkedin\.com'
+
+# Exclude LinkedIn and Archive.org URLs
+lychee --exclude '^https://www\.linkedin\.com' --exclude '^https://web\.archive\.org/web/'
+
+# Exclude all links to PDF files
+lychee --exclude '\.pdf$' .
+
+# Exclude links to specific domains
+lychee --exclude '(facebook|twitter|linkedin)\.com' .
+
+# Exclude links with certain URL parameters
+lychee --exclude '\?utm_source=' .
+
+# Exclude all mailto links
+lychee --exclude '^mailto:' .
+```
 
 For excluding files/directories from being scanned use `lychee.toml`
 and `exclude_path`.
@@ -517,6 +556,12 @@ and `exclude_path`.
 ```toml
 exclude_path = ["some/path", "*/dev/*"]
 ```
+
+If a file named `.lycheeignore` exists in the current working directory, its
+contents are excluded as well. The file allows you to list multiple regular
+expressions for exclusion (one pattern per line).
+
+For more advanced usage and detailed explanations, check out our comprehensive [guide on excluding links](https://lychee.cli.rs/recipes/excluding-links/).
 
 ### Caching
 
@@ -664,6 +709,9 @@ We collect a list of common workarounds for various websites in our [troubleshoo
 - https://github.com/mre/idiomatic-rust
 - https://github.com/bencherdev/bencher
 - https://github.com/sindresorhus/execa
+- https://github.com/tldr-pages/tldr-maintenance
+- https://github.com/git-ecosystem/git-credential-manager
+- https://git-scm.com/
 - https://github.com/lycheeverse/lychee (yes, the lychee docs are checked with lychee 🤯)
 
 If you are using lychee for your project, **please add it here**.

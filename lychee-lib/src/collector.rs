@@ -12,10 +12,13 @@ use par_stream::ParStreamExt;
 
 /// Collector keeps the state of link collection
 /// It drives the link extraction from inputs
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone)]
 pub struct Collector {
     basic_auth_extractor: Option<BasicAuthExtractor>,
     skip_missing_inputs: bool,
+    skip_ignored: bool,
+    skip_hidden: bool,
     include_verbatim: bool,
     use_html5ever: bool,
     base: Option<Base>,
@@ -30,6 +33,8 @@ impl Collector {
             skip_missing_inputs: false,
             include_verbatim: false,
             use_html5ever: false,
+            skip_hidden: true,
+            skip_ignored: true,
             base,
         }
     }
@@ -38,6 +43,20 @@ impl Collector {
     #[must_use]
     pub const fn skip_missing_inputs(mut self, yes: bool) -> Self {
         self.skip_missing_inputs = yes;
+        self
+    }
+
+    /// Skip files that are hidden
+    #[must_use]
+    pub const fn skip_hidden(mut self, yes: bool) -> Self {
+        self.skip_hidden = yes;
+        self
+    }
+
+    /// Skip files that are ignored
+    #[must_use]
+    pub const fn skip_ignored(mut self, yes: bool) -> Self {
+        self.skip_ignored = yes;
         self
     }
 
@@ -82,17 +101,20 @@ impl Collector {
     /// Will return `Err` if links cannot be extracted from an input
     pub fn collect_links(self, inputs: Vec<Input>) -> impl Stream<Item = Result<Request>> {
         let skip_missing_inputs = self.skip_missing_inputs;
+        let skip_hidden = self.skip_hidden;
+        let skip_ignored = self.skip_ignored;
+        let default_base = self.base.clone();
         stream::iter(inputs)
             .par_then_unordered(None, move |input| {
-                let default_base = self.base.clone();
+                let default_base = default_base.clone();
                 async move {
                     let base = match &input.source {
                         InputSource::RemoteUrl(url) => Base::try_from(url.as_str()).ok(),
                         _ => default_base,
                     };
                     input
-                        .get_contents(skip_missing_inputs)
-                        .map(move |content| (content, base.clone()))
+                        .get_contents(skip_missing_inputs, skip_hidden, skip_ignored)
+                        .map(move |content| (content, base))
                 }
             })
             .flatten()
@@ -144,7 +166,10 @@ mod tests {
         let file_path = temp_dir.path().join("README");
         let _file = File::create(&file_path).unwrap();
         let input = Input::new(&file_path.as_path().display().to_string(), None, true, None)?;
-        let contents: Vec<_> = input.get_contents(true).collect::<Vec<_>>().await;
+        let contents: Vec<_> = input
+            .get_contents(true, true, true)
+            .collect::<Vec<_>>()
+            .await;
 
         assert_eq!(contents.len(), 1);
         assert_eq!(contents[0].as_ref().unwrap().file_type, FileType::Plaintext);
@@ -154,7 +179,10 @@ mod tests {
     #[tokio::test]
     async fn test_url_without_extension_is_html() -> Result<()> {
         let input = Input::new("https://example.com/", None, true, None)?;
-        let contents: Vec<_> = input.get_contents(true).collect::<Vec<_>>().await;
+        let contents: Vec<_> = input
+            .get_contents(true, true, true)
+            .collect::<Vec<_>>()
+            .await;
 
         assert_eq!(contents.len(), 1);
         assert_eq!(contents[0].as_ref().unwrap().file_type, FileType::Html);

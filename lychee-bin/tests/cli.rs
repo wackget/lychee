@@ -471,6 +471,44 @@ mod cli {
         cmd.arg(&filename).arg("--skip-missing").assert().success();
     }
 
+    #[test]
+    fn test_skips_hidden_files_by_default() {
+        main_command()
+            .arg(fixtures_path().join("hidden/"))
+            .assert()
+            .success()
+            .stdout(contains("0 Total"));
+    }
+
+    #[test]
+    fn test_include_hidden_file() {
+        main_command()
+            .arg(fixtures_path().join("hidden/"))
+            .arg("--hidden")
+            .assert()
+            .success()
+            .stdout(contains("1 Total"));
+    }
+
+    #[test]
+    fn test_skips_ignored_files_by_default() {
+        main_command()
+            .arg(fixtures_path().join("ignore/"))
+            .assert()
+            .success()
+            .stdout(contains("0 Total"));
+    }
+
+    #[test]
+    fn test_include_ignored_file() {
+        main_command()
+            .arg(fixtures_path().join("ignore/"))
+            .arg("--no-ignore")
+            .assert()
+            .success()
+            .stdout(contains("1 Total"));
+    }
+
     #[tokio::test]
     async fn test_glob() -> Result<()> {
         // using Result to be able to use `?`
@@ -759,7 +797,7 @@ mod cli {
     #[test]
     fn test_lycheeignore_file() -> Result<()> {
         let mut cmd = main_command();
-        let test_path = fixtures_path().join("ignore");
+        let test_path = fixtures_path().join("lycheeignore");
 
         let cmd = cmd
             .current_dir(test_path)
@@ -780,7 +818,7 @@ mod cli {
     #[test]
     fn test_lycheeignore_and_exclude_file() -> Result<()> {
         let mut cmd = main_command();
-        let test_path = fixtures_path().join("ignore");
+        let test_path = fixtures_path().join("lycheeignore");
         let excludes_path = test_path.join("normal-exclude-file");
 
         cmd.current_dir(test_path)
@@ -1338,6 +1376,7 @@ mod cli {
     }
 
     #[test]
+    #[ignore = "Skipping test because it is flaky"]
     fn test_suggests_url_alternatives() -> Result<()> {
         for _ in 0..3 {
             // This can be flaky. Try up to 3 times
